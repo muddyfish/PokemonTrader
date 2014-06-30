@@ -1,5 +1,6 @@
-from dummy import *
-import pygame, glob, json, os
+from logo import *
+from message import *
+import pygame, glob, json, os, sys
 
 class Main:  
     def __init__(self):
@@ -11,12 +12,15 @@ class Main:
         #Create the display
         self.screen = pygame.display.set_mode(tuple(self.settings["size"]), self.full) 
         pygame.display.set_caption("Pokemon")
+        self.font=pygame.font.Font("Fonts/rusa.ttf", 12)
         self.clock=pygame.time.Clock()
-        self.screen_controller = Dummy()
+        self.controllers = {"logo": Logo, \
+                            "message": Message}
+        self.screen_controller = Logo(self, pygame)
 
     def run(self):
         while 1:
-            self.clock.tick()
+            self.clock.tick(60)
             events = pygame.event.get()
             for event in events: #Events that are always done
                 if event.type == pygame.QUIT: self.exit()
@@ -24,9 +28,12 @@ class Main:
                     if event.key == pygame.K_BACKSPACE: self.screenshot()
                     if event.key == pygame.K_ESCAPE: self.exit()
             self.screen_controller.run(events) #Other events
-            fps = self.fps_font.render("Frames Calculated: %d"%(self.clock.get_fps()) , True, (255,255,255))
+            fps = self.font.render("Frames Calculated: %d"%(self.clock.get_fps()) , True, (255,255,255))
             self.screen.blit(fps, (10, 10))
             pygame.display.flip()
+
+    def set_controller(self, controller, *args, **kwargs):
+        self.screen_controller = self.controllers[controller](self, pygame, *args, **kwargs)
 
     def screenshot(self):
         print("Screenshot")
