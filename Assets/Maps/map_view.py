@@ -116,6 +116,8 @@ class Map():
 	self.view_offset[d]=16
       self.view_offset[d]-=2*a
       self.use_exit(self.check_exits(d, a))
+    elif self.current_direction == [0,0]:
+      self.use_exit(self.check_exits(d, a))      
 
   def run(self, events):
     for event in events:
