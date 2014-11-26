@@ -15,7 +15,7 @@ class Map():
     self.load_map(self.map_f)
     self.tile_offset = [0,0]
     self.view_offset = [0,0]
-    self.coll_surf = pygame.Surface((16,16), pygame.SRCALPHA)
+    self.coll_surf = pygame.Surface((16,24), pygame.SRCALPHA)
     self.coll_surf.fill((0,128,0,128))
     self.blit_range = [range(self.blit_tiles[i]) for i in [0,1]]
     self.move_directions = {pygame.K_LEFT: (0,-1),
@@ -37,26 +37,38 @@ class Map():
     self.map = zipfile.ZipFile(map_f, "r")
     self.map_name = map_f.split("/")[-1]
     namelist = self.map.namelist()
-    self.position = json.load(self.map.open("position"))
-    self.tilesheet = pygame.image.load(StringIO.StringIO(self.map.read("tilesheet")), ".tga")
+    self.no_layers = len(filter(lambda x: x[:8]=='position', namelist))
+    assert(self.no_layers in [1,2])
+    self.layers = {"position": [json.load(self.map.open("position"))],\
+      "tilesheet": [pygame.image.load(StringIO.StringIO(self.map.read("tilesheet")), ".tga")]}
+    if self.no_layers > 1:
+      for i in range(self.no_layers-1):
+	self.layers["position"].append(json.load(self.map.open("position_%i"%(i+1))))
+	self.layers["tilesheet"].append(pygame.image.load(StringIO.StringIO(self.map.read("tilesheet_%i"%(i+1))), ".tga"))
     if 'collision' in namelist:
       self.collision = json.load(self.map.open("collision"))
     else:
-      self.collision = self.get_2darray(len(self.position[0])*2, len(self.position)*2)
+      self.collision = self.get_2darray(len(self.layers["position"][0][0])*2, len(self.layers["position"][0])*2)
     self.exits = {}
     if 'exits' in namelist:
       exits = json.load(self.map.open("exits"))
       for key in exits:
        self.exits[tuple(json.loads(key))] = exits[key]
     self.map.close()
-    self.tile_size = self.tilesheet.get_height()
+    self.tile_size = self.layers["tilesheet"][0].get_height()
     self.tile_ims = []
-    for tile in range(self.tilesheet.get_width()//self.tile_size):
-      self.tile_ims.append(pygame.Surface((self.tile_size, self.tile_size)))
-      self.tile_ims[-1].blit(self.tilesheet, (0,0), (tile*self.tile_size,0,(tile+1)*self.tile_size,16))
-    self.tiles = [[self.tile_ims[self.position[x][y]] \
-      for y in range(len(self.position[0]))] \
-      for x in range(len(self.position))]
+    for layer in range(self.no_layers):
+      self.tile_ims.append([])
+      for tile in range(self.layers["tilesheet"][layer].get_width()//self.tile_size):
+	self.tile_ims[-1].append(pygame.Surface((self.tile_size, self.tile_size)))
+	if layer != 0:
+	  self.tile_ims[-1][-1].set_colorkey((255,255,255))
+	self.tile_ims[-1][-1].blit(self.layers["tilesheet"][layer], (0,0), (tile*self.tile_size,0,(tile+1)*self.tile_size,16))
+    
+    self.tiles = [[[self.tile_ims[layer][self.layers["position"][layer][x][y]] \
+      for y in range(len(self.layers["position"][layer][0]))] \
+      for x in range(len(self.layers["position"][layer]))] \
+      for layer in range(self.no_layers)]
     self.blit_tiles = [i//self.tile_size+1 for i in self.screen.get_size()]
   
   def get_2darray(self, x, y, fill='0'):
@@ -105,8 +117,7 @@ class Map():
     if self.noclip: return True
     offset = self.get_offset()
     offset[d]+=a
-    return not (self.collision[offset[0]][offset[1]] or self.collision[offset[0]-1][offset[1]] or \
-                self.collision[offset[0]][offset[1]-1] or self.collision[offset[0]-1][offset[1]-1])
+    return not (self.collision[offset[0]][offset[1]] or self.collision[offset[0]-1][offset[1]])
 
   def move(self, d, a):
     if self.current_direction == [0,0] and self.collide(d,a):
@@ -134,7 +145,7 @@ class Map():
       if event.type == pygame.KEYDOWN:
         if event.key in self.move_directions:
 	  self.move(*self.move_directions[event.key])
-    player_pos = [self.screen.get_width()/2-16, self.screen.get_height()/2-16]
+    player_pos = [self.screen.get_width()/2-16, self.screen.get_height()/2-24]
     blit_x = self.tile_offset[0]
     blit_y = self.tile_offset[1]
     view_x = self.view_offset[0]
@@ -142,25 +153,27 @@ class Map():
     
     if self.tile_offset[0] < 0:
       blit_x = -1
-      view_x = -16
+      view_x = -17
       player_pos[0] += self.tile_offset[0]*16-self.view_offset[0]+16
-    elif self.tile_offset[0]+self.blit_tiles[0]-1 >= len(self.tiles):
-      blit_x = len(self.tiles)-self.blit_tiles[0]
+    elif self.tile_offset[0]+self.blit_tiles[0]-1 >= len(self.tiles[0]):
+      blit_x = len(self.tiles[0])-self.blit_tiles[0]
       view_x = 0
-      player_pos[0] -= (len(self.tiles)-self.blit_tiles[0]-self.tile_offset[0])*16+self.view_offset[0]
+      player_pos[0] -= (len(self.tiles[0])-self.blit_tiles[0]-self.tile_offset[0])*16+self.view_offset[0]
     if self.tile_offset[1] < 0:
       blit_y = -1
-      view_y = -16
+      view_y = -17
       player_pos[1] += self.tile_offset[1]*16-self.view_offset[1]+16
-    elif self.tile_offset[1]+self.blit_tiles[1]-1 >= len(self.tiles[0]):
-      blit_y = len(self.tiles[0])-self.blit_tiles[1]
+    elif self.tile_offset[1]+self.blit_tiles[1]-1 >= len(self.tiles[0][0]):
+      blit_y = len(self.tiles[0][0])-self.blit_tiles[1]
       view_y = 0
-      player_pos[1] -= (len(self.tiles[0])-self.blit_tiles[1]-self.tile_offset[1])*16+self.view_offset[1]
- 
-    for x in self.blit_range[0]:
-      for y in self.blit_range[1]:
-	self.screen.blit_func(self.tiles[blit_x+x][blit_y+y], self.pos[view_x][view_y][x][y])
-    self.screen.blit_func(self.coll_surf, player_pos)
+      player_pos[1] -= (len(self.tiles[0][0])-self.blit_tiles[1]-self.tile_offset[1])*16+self.view_offset[1]
+
+    for layer in range(self.no_layers):
+      for x in self.blit_range[0]:
+	for y in self.blit_range[1]:
+	  self.screen.blit_func(self.tiles[layer][blit_x+x][blit_y+y], self.pos[view_x][view_y][x][y])
+      if layer == 0:
+	self.screen.blit_func(self.coll_surf, player_pos)
     
 def add_globals(main, pygame):
   globals()["main"] = main
