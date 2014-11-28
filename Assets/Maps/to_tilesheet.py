@@ -59,11 +59,15 @@ def convert(im, amount=20):
 print("Loading input image")
 im = Image.open(sys.argv[1])
 print("Creating save file")
-save = zipfile.ZipFile(sys.argv[1].split("/")[-1][:-4]+".tiles")
-files = {i:save.open(i).read() for i in save.namelist() if not ('position' in i or 'tilesheet' in i)}
-save = zipfile.ZipFile(sys.argv[1].split("/")[-1][:-4]+".tiles", "w", zipfile.ZIP_DEFLATED)
-for f in files:
-  save.writestr(f, files[f])
+try:
+  save = zipfile.ZipFile(sys.argv[1].split("/")[-1][:-4]+".tiles")
+except IOError:
+  save = zipfile.ZipFile(sys.argv[1].split("/")[-1][:-4]+".tiles", "w", zipfile.ZIP_DEFLATED)
+else:
+  files = {i:save.open(i).read() for i in save.namelist() if not ('position' in i or 'tilesheet' in i)}
+  save = zipfile.ZipFile(sys.argv[1].split("/")[-1][:-4]+".tiles", "w", zipfile.ZIP_DEFLATED)
+  for f in files:
+    save.writestr(f, files[f])
 image_id = 0
 while 1:
   try:

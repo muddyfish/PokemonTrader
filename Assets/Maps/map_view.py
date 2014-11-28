@@ -16,14 +16,14 @@ class Map():
     self.tile_offset = [0,0]
     self.view_offset = [0,0]
     self.coll_surf = pygame.Surface((16,24), pygame.SRCALPHA)
-    self.coll_surf.fill((0,128,0,128))
+    self.coll_surf.fill((0,128,0))
     self.blit_range = [range(self.blit_tiles[i]) for i in [0,1]]
     self.move_directions = {pygame.K_LEFT: (0,-1),
 			    pygame.K_RIGHT:(0, 1),
 			    pygame.K_UP:   (1,-1),
 			    pygame.K_DOWN: (1, 1)}
     self.current_direction = [0,0]
-    self.pos = [[[[(self.get_pos(x,y, [x2,y2])) \
+    self.pos = [[[[(self.get_pos(x,y, 8, [x2,y2])) \
       for y in self.blit_range[1]] \
       for x in self.blit_range[0]] \
       for y2 in range(17)] \
@@ -48,7 +48,7 @@ class Map():
     if 'collision' in namelist:
       self.collision = json.load(self.map.open("collision"))
     else:
-      self.collision = self.get_2darray(len(self.layers["position"][0][0])*2, len(self.layers["position"][0])*2)
+      self.collision = self.get_2darray(len(self.layers["position"][0][0]), len(self.layers["position"][0]))
     self.exits = {}
     if 'exits' in namelist:
       exits = json.load(self.map.open("exits"))
@@ -76,19 +76,19 @@ class Map():
 	for a in range(x)] \
 	for b in range(y)]
   
-  def get_pos(self, x, y, view_offset, mult=16):
+  def get_pos(self, x, y, extra=0, view_offset=(0,0), mult=16):
     h = hash((x,y,view_offset[0],view_offset[1],mult))
     if h in self.hash_dict['get_pos']:
       return self.hash_dict['get_pos'][h]
     if mult > 8:
-      rtn = ((x-1)*16+view_offset[0], (y-1)*16+view_offset[1])
+      rtn = ((x-1)*16+view_offset[0]+extra, (y-1)*16+view_offset[1])
     else:
-      rtn = ((x-2)*16+view_offset[0], (y-2)*16+view_offset[1])
+      rtn = ((x-2)*16+view_offset[0]+extra, (y-2)*16+view_offset[1])
     self.hash_dict['get_pos'][h] = rtn
     return rtn
 
   def get_offset(self):
-    return [self.tile_offset[i]*2-(self.view_offset[i]>>3)+self.blit_tiles[i] for i in range(2)] 
+    return [self.tile_offset[i]+self.blit_tiles[i]/2-1 for i in range(2)] 
 
   def check_exits(self, d, a):
     offset = self.get_offset()
@@ -106,10 +106,11 @@ class Map():
     self.load_map('Assets/Maps/'+exit[1])
     offset = sorted([k for (k,v) in self.exits.iteritems() if filter_list == v[:3]])
     offset = offset[len(offset)/2]
-    self.tile_offset = [offset[0]/2-self.blit_tiles[0]/2,offset[1]/2-self.blit_tiles[1]/2+2]
-    self.view_offset = [((offset[0]+1)%2)*8,(offset[1]%2)*8]
-    d=(self.exits[offset][3]-1)%2
-    self.tile_offset[d^1]+={1:1,0:-1}[d]
+    self.tile_offset = [offset[0]-self.blit_tiles[0]/2+1,offset[1]-self.blit_tiles[1]/2+1]
+    self.view_offset = [8,8]
+    d = (self.exits[offset][3]-1)%2
+    a = self.exits[offset][3]-2+d
+    self.tile_offset[d^1]+=a
     self.current_direction=[0,0]
     self.screen.blit_all()
     
@@ -117,16 +118,16 @@ class Map():
     if self.noclip: return True
     offset = self.get_offset()
     offset[d]+=a
-    return not (self.collision[offset[0]][offset[1]] or self.collision[offset[0]-1][offset[1]])
+    return not (self.collision[offset[0]][offset[1]])
 
   def move(self, d, a):
     if self.current_direction == [0,0] and self.collide(d,a):
-      self.current_direction[d] = -2*a
-      if len({(self.view_offset[d], a), (0,1), (16,0)})==2:
+      self.current_direction[d]=-2*a
+      if len({(self.view_offset[d], self.current_direction[d]), (0,-2), (16,2)})==2:
 	self.tile_offset[d]+=a
-	self.view_offset[d]=16
-      self.view_offset[d]-=2*a
+	self.view_offset[d]^=16
       self.use_exit(self.check_exits(d, a))
+      self.screen.blit_all()
     elif self.current_direction == [0,0]:
       self.use_exit(self.check_exits(d, a))      
 
@@ -136,10 +137,10 @@ class Map():
 	if self.current_direction != [0,0]:
 	  d = int(self.current_direction[1]!=0)
 	  self.view_offset[d]+=self.current_direction[d]
-	  if self.view_offset[d]==16:
+	  if len({(self.view_offset[d], self.current_direction[d]), (0,-2), (16,2)})==2:
 	    self.tile_offset[d]-=self.current_direction[d]/2
-	    self.view_offset[d]=0
-	  if self.view_offset[d]%8==0:
+	    self.view_offset[d]^=16
+	  if self.view_offset[d]==8:
 	    self.current_direction = [0,0]
 	  self.screen.blit_all()
       if event.type == pygame.KEYDOWN:
