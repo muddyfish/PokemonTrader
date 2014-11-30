@@ -28,7 +28,7 @@ class AssetLoader():
       if self.debug:
 	print "Asset %s already loaded as %s" %(filename, asset)
       return asset
-    self.loaded_assets[asset_hash] = pygame.image.load(("Assets/Graphics/"+filename).replace("/", os.sep))
+    self.loaded_assets[asset_hash] = pygame.image.load(("Assets/Texture/"+filename).replace("/", os.sep))
     return self.loaded_assets[asset_hash]
   
   def reload_asset(self, *args):
@@ -38,7 +38,7 @@ class AssetLoader():
   
   def reload_image(self, filename):
     asset_hash = self.get_hash(filename)
-    self.loaded_assets[asset_hash] = pygame.image.load(("Assets/Graphics/"+filename).replace("/", os.sep))
+    self.loaded_assets[asset_hash] = pygame.image.load(("Assets/Texture/"+filename).replace("/", os.sep))
     return self.loaded_assets[asset_hash]
   
   def del_asset(self, *args):

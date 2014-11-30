@@ -7,8 +7,9 @@ import json
 import inspect
 
 import Assets.Utility.asset_loader as asset_loader
-import Assets.Maps.map_edit as map_edit
-import Assets.Maps.map_view as map_view
+import Assets.Map.map_edit as map_edit
+import Assets.Map.map_view as map_view
+import Assets.Entity.get_entities as get_entities
 
 class Main:
   def __init__(self):
@@ -22,7 +23,7 @@ class Main:
     #Init pygame
     pygame.init()
     self.screen = Screen(pygame.display.set_mode(tuple(self.size), self.fullscreen)) #Create the display
-    pygame.display.set_caption("ALTTP")
+    pygame.display.set_caption("PKMN Emerald")
     self.clock = pygame.time.Clock()
     self.key_event = pygame.USEREVENT+1
     self.key_speed = 100
@@ -36,9 +37,10 @@ class Main:
     self.fps_font=pygame.font.SysFont("vervanda", 12)
 
     self.asset_loader = asset_loader.AssetLoader(pygame)
+    self.entities = get_entities.get_entities()
     self.controllers = {
-      "map_edit": map_edit.Map,
-      "map_view": map_view.Map}
+      "map_edit": map_edit.MapEdit,
+      "map_view": map_view.MapView}
     self.screen_control = None
     cont = 'map_view'
     if 'edit' in self.args:
