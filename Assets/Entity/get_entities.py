@@ -8,4 +8,5 @@ def get_entities():
          file != "__init__.py" and \
 	 root != ENTITY_PATH:
 	entities[file[:-3]]=__import__(root.replace(os.sep, '.')+"."+file[:-3], globals(), locals(), ['object'], -1).__dict__[file[:-3].capitalize()]
+  del entities['entity']
   return entities

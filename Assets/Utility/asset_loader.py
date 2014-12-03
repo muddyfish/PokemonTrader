@@ -21,7 +21,7 @@ class AssetLoader():
     self.loaded_assets[asset_hash] = open(("Assets/"+filename).replace("/", os.sep), mode)
     return self.loaded_assets[asset_hash]
     
-  def load_image(self, filename):
+  def load_image(self, filename, alpha = False):
     asset_hash = hash((filename, "rb"))
     if asset_hash in self.loaded_assets:
       asset = self.loaded_assets[asset_hash]
@@ -29,6 +29,9 @@ class AssetLoader():
 	print "Asset %s already loaded as %s" %(filename, asset)
       return asset
     self.loaded_assets[asset_hash] = pygame.image.load(("Assets/Texture/"+filename).replace("/", os.sep))
+    if not alpha: self.loaded_assets[asset_hash] = self.loaded_assets[asset_hash].convert()
+    else:
+      self.loaded_assets[asset_hash] = self.loaded_assets[asset_hash].convert_alpha()
     return self.loaded_assets[asset_hash]
   
   def reload_asset(self, *args):

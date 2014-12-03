@@ -30,7 +30,7 @@ class Map(object):
     files = {i:save.open(i).read() for i in save.namelist()}
     files["exits"] = json.dumps({str(list(k)): v for (k,v) in self.exits.iteritems()})
     files["collision"] = json.dumps(self.collision)
-    files["entities"] = json.dumps([(entity.__class__.__name__, entity.pos) for entity in self.entities])
+    files["entities"] = json.dumps([(entity.__class__.__name__, entity.pos, entity.script) for entity in self.entities])
     save.close()
     save = zipfile.ZipFile(main.args[1], "w", zipfile.ZIP_DEFLATED)
     for f in files:
@@ -68,9 +68,10 @@ class Map(object):
       for key in exits:
        self.exits[tuple(json.loads(key))] = exits[key]
     if 'entities' in namelist:
-      self.entities = [main.entities[entity[0].lower()](self, entity[1]) for entity in json.load(self.map.open("entities"))]
+      self.entities = [main.entities[entity[0].lower()](self, entity[1], entity[2]) for entity in json.load(self.map.open("entities"))]
     else:
       self.entities = []
+    self.script = json.load(self.map.open("script"))
     self.map.close()
     self.tile_size = self.layers["tilesheet"][0].get_height()
     self.tile_ims = []
@@ -111,13 +112,14 @@ class Map(object):
   def use_exit(self, exit):
     if exit == None: return
     filter_list = [exit[2], self.map_name, exit[0]]
-    self.load_map('Assets/Map/'+exit[1])
+    self.load_map('Assets/Map/Tiles/'+exit[1])
     offset = sorted([k for (k,v) in self.exits.iteritems() if filter_list == v[:3]])
     offset = offset[len(offset)/2]
     self.tile_offset = [offset[0]-self.blit_tiles[0]/2+1,offset[1]-self.blit_tiles[1]/2+1]
     self.view_offset = [8,8]
     d = (self.exits[offset][3]-1)%2
     a = self.exits[offset][3]-2+d
+    if a==3:a=-1
     self.tile_offset[d^1]+=a
     self.current_direction=[0,0]
     self.screen.blit_all()
@@ -172,5 +174,5 @@ class Map(object):
     for x in self.blit_range[0]:
       for y in self.blit_range[1]:
 	self.screen.blit_func(self.tiles[layer][self.blit_x+x][self.blit_y+y], self.pos[self.view_x][self.view_y][x][y])
-
+      
     

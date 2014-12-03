@@ -2,15 +2,15 @@ import pygame, random
 from Assets.Entity.Base.entity import Entity
 
 class Flower(Entity):
-  def __init__(self, map, pos):
-    super(Flower, self).__init__(map, pos)
+  def __init__(self, map, pos, script):
+    super(Flower, self).__init__(map, pos, script)
     self.collideable = False
-    self.spritesheet = self.asset_loader.load_image("Entity/flower.png")
+    self.spritesheet = self.asset_loader.load_image("Entity/flower.png", True)
     self.sprites = []
     self.tile_size = self.spritesheet.get_height()
     self.no_sprites = self.spritesheet.get_width()//self.tile_size
     for tile in range(self.no_sprites):
-      self.sprites.append(pygame.Surface((self.tile_size, self.tile_size)))
+      self.sprites.append(pygame.Surface((self.tile_size, self.tile_size), pygame.SRCALPHA))
       self.sprites[-1].blit(self.spritesheet, (0,0), (tile*self.tile_size,0,(tile+1)*self.tile_size,16))
     self.sprites.extend(self.sprites[-2::-1])
     self.no_sprites+=self.no_sprites-1

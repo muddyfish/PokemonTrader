@@ -111,8 +111,10 @@ class MapEdit(object):
       
   def entity_setup(self):
     self.entity_selected = None
-    self.all_entities = [entity(self.map, (0,0)) for entity in main.entities.values()]
+    self.all_entities = [entity(self.map, (0,0), "") for entity in main.entities.values()]
+    self.entity_script = Input(x=16, y=main.size[1]+48, font = main.entry_font, color=(255,255,255), prompt = "Script name: ")
   def entity_events(self, events):
+    self.entity_script.update(events)
     for event in events:
       if event.type == pygame.MOUSEBUTTONDOWN:
 	if event.pos[0]%32>=16 and 0<event.pos[1]-main.size[1]-16<=16:
@@ -130,8 +132,9 @@ class MapEdit(object):
 	      del self.map.entities[i]
 	      break
 	  if not sametype:
-	    self.map.entities.append(entity_class(self.map, (x,y)))
+	    self.map.entities.append(entity_class(self.map, (x,y), self.entity_script.value))
   def entity_blits(self, x, y):
+    self.entity_script.draw(self.screen)
     for i, entity in enumerate(self.all_entities):
       self.screen.blit_func(entity.sprite, (32*i+16,main.size[1]+16))
       if self.entity_selected == i:

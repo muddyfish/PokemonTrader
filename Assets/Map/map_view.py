@@ -23,7 +23,9 @@ class MapView():
       return False
     for entity in self.map.entities:
       if offset == entity.pos:
-	entity.interact(self.map.tile_offset)
+	o = [0,0]
+	o[d]+=a
+	entity.interact(o)
 	if entity.collideable:
 	  return False
     return True
