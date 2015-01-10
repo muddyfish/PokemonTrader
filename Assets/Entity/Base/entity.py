@@ -3,6 +3,7 @@ import pygame
 class Entity(object):
   def __init__(self, map, pos, script):
     self.map = map
+    self.main = self.map.main
     self.screen = map.screen
     self.pos = pos
     self.script = script

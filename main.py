@@ -9,6 +9,7 @@ import inspect
 import Assets.Utility.asset_loader as asset_loader
 import Assets.Map.map_edit as map_edit
 import Assets.Map.map_view as map_view
+import Assets.Message.messagebox as message_box
 import Assets.Entity.get_entities as get_entities
 
 class Main:
@@ -23,7 +24,7 @@ class Main:
     #Init pygame
     pygame.init()
     self.screen = Screen(pygame.display.set_mode(tuple(self.size), self.fullscreen)) #Create the display
-    pygame.display.set_caption("PKMN Emerald")
+    pygame.display.set_caption("PKMN Red")
     self.clock = pygame.time.Clock()
     self.key_event = pygame.USEREVENT+1
     self.key_speed = 100
@@ -33,14 +34,16 @@ class Main:
     pygame.time.set_timer(self.tick_event, self.tick_speed)
     self.args = sys.argv
 
-    self.entry_font=pygame.font.SysFont("vervanda", 18)
+    self.message_font=pygame.font.Font("Assets/Fonts/pkmnrs.ttf", 13)
+    self.entry_font = pygame.font.Font("Assets/Fonts/pkmnrs.ttf", 13)
     self.fps_font=pygame.font.SysFont("vervanda", 12)
 
     self.asset_loader = asset_loader.AssetLoader(pygame)
     self.entities = get_entities.get_entities()
     self.controllers = {
       "map_edit": map_edit.MapEdit,
-      "map_view": map_view.MapView}
+      "map_view": map_view.MapView,
+      "message_box": message_box.Message}
     self.screen_control = None
     cont = 'map_view'
     if 'edit' in self.args:
@@ -78,6 +81,10 @@ class Main:
     latest_num=0
     if len(globs) != 0: latest_num = max([int(f.split("_")[-1][:-4]) for f in globs])
     pygame.image.save(self.screen.copy(), "Screenshots%sscreenshot_%i.png" %(os.sep, latest_num+1))
+
+  def message_box(self, text):
+    self.screen_control_name = "message_box"
+    self.screen_control = self.controllers["message_box"](self, pygame, self.screen_control, text)
 
   def change_controller(self,new):
     self.screen.blit_rects.append(((0,0), self.screen.get_size()))

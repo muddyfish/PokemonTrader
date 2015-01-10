@@ -6,12 +6,8 @@ __pycache__/
 *.gba
 
 settings.json
-pokemon/
-miscgfx/
-itemicons/
-ow_sprites/
-trainers/
-pokemon_im.dat
-
+Screenshots/
+ROM/
+.directory
 *~
 \#*\#

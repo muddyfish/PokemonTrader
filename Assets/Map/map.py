@@ -9,6 +9,7 @@ class Map(object):
   def __init__(self, main, pygame, map_f):
     globals()["main"] = main
     globals()["pygame"] = pygame
+    self.main = main
     self.screen = main.screen
     self.asset_loader = main.asset_loader
     self.tile_offset = [0,0]
@@ -71,7 +72,9 @@ class Map(object):
       self.entities = [main.entities[entity[0].lower()](self, entity[1], entity[2]) for entity in json.load(self.map.open("entities"))]
     else:
       self.entities = []
-    self.script = json.load(self.map.open("script"))
+    self.script = ''
+    if 'script' in namelist:
+      self.script = json.load(self.map.open("script"))
     self.map.close()
     self.tile_size = self.layers["tilesheet"][0].get_height()
     self.tile_ims = []
@@ -130,7 +133,6 @@ class Map(object):
       if len({(self.view_offset[d], self.current_direction[d]), (0,-2), (16,2)})==2:
 	self.tile_offset[d]+=a
 	self.view_offset[d]^=16
-      self.use_exit(self.check_exits(d, a))
       self.screen.blit_all()
     elif self.current_direction == [0,0]:
       self.use_exit(self.check_exits(d, a))
@@ -143,6 +145,7 @@ class Map(object):
 	self.tile_offset[d]-=self.current_direction[d]/2
 	self.view_offset[d]^=16
       if self.view_offset[d]==8:
+	self.use_exit(self.check_exits(d, 0))
 	self.current_direction = [0,0]
       self.screen.blit_all()
    
